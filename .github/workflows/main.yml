@@ -1,0 +1,14 @@
+name: main
+
+on:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-style-checks:
+    uses: ./.github/workflows/code-style.yml

@@ -1,0 +1,15 @@
+# More on version specifiers: https://packaging.python.org/en/latest/specifications/version-specifiers/#id5
+httpx~=0.27
+python-dotenv~=1.0
+black~=24.4
+isort~=5.13
+mypy~=1.11
+flake8~=7.1
+google-api-python-client
+google-auth-httplib2
+# google-auth-oauthlib
+python-dateutil
+google-auth
+# google-auth
+# google-auth-httplib2
+# google-api-python-client

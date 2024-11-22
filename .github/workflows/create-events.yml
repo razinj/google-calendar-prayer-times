@@ -1,0 +1,27 @@
+name: "create-events"
+
+on:
+  schedule:
+    - cron: "20 0 1 * *" # Using UTC timezone
+  workflow_dispatch:
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - run: pip install -r requirements.txt
+
+      - name: Create Env. And JSON Files & Run Script
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_CONTENT }}
+          SERVICE_ACCOUNT_FILE_CONTENT: ${{ secrets.SERVICE_ACCOUNT_FILE_CONTENT }}
+        run: |
+          set -e
+          echo "$ENV_FILE_CONTENT" > .env
+          echo "$SERVICE_ACCOUNT_FILE_CONTENT" > service-account.json
+          python src/script.py
