@@ -1,12 +1,12 @@
 import datetime
-import typing as t
 import os
+import typing as t
 
 import httpx
 from dateutil.parser import parse
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
 from dotenv import load_dotenv
+from google.oauth2 import service_account
+from googleapiclient.discovery import build  # type: ignore
 
 load_dotenv()
 
@@ -85,7 +85,7 @@ def create_calendar_events(
             "end": {
                 "dateTime": end_date.strftime("%Y-%m-%dT%H:%M:%S"),
                 "timeZone": TIMEZONE,
-            }
+            },
         }
 
         event = service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
