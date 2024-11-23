@@ -2,8 +2,6 @@
 
 This guide explains how to set up and use a **service account** to access the Google Calendar API without requiring a user consent screen.
 
----
-
 ## Steps to Set Up a Service Account
 
 ### 1. Create a Service Account
