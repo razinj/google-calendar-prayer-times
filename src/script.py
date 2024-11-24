@@ -88,7 +88,7 @@ def create_calendar_events(
             },
         }
 
-        # See: https://developers.google.com/resources/api-libraries/documentation/calendar/v3/python/latest/calendar_v3.events.html#insert
+        # See: https://developers.google.com/resources/api-libraries/documentation/calendar/v3/python/latest/calendar_v3.events.html#insert # noqa: E501
         event = service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
         print(f"Event created: {event.get('summary')}")
 
