@@ -162,7 +162,7 @@ def create_calendar_events_morocco(
         }
 
         # See: https://developers.google.com/resources/api-libraries/documentation/calendar/v3/python/latest/calendar_v3.events.html#insert # noqa: E501
-        service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
+        service.events().insert(calendarId=CALENDAR_ID_MOROCCO, body=event).execute()
 
     for day in prayer_times_days:
         timings = t.cast(t.Dict[str, str], day.get("timings"))
