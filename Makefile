@@ -1,15 +1,15 @@
 format:
-	black .
-	isort .
+	poetry run black .
+	poetry run isort .
 
 lint:
-	mypy .
-	flake8 .
+	poetry run mypy .
+	poetry run flake8 .
 
 format-ci:
-	black . --check
-	isort . --check
+	poetry run black . --check
+	poetry run isort . --check
 
 lint-ci:
-	mypy .
-	flake8 .
+	poetry run mypy .
+	poetry run flake8 .
