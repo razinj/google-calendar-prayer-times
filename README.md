@@ -25,12 +25,10 @@ Preview:
 
 ## Run
 
-Setup and install dependencies:
+Install dependencies:
 
 ```shell
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+poetry install
 ```
 
 Run the script:
