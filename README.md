@@ -1,6 +1,6 @@
 # Google Calendar Prayer Times
 
-A script that fetches the Islamic prayer times from [prayer-times-api.izaachen.de](https://prayer-times-api.izaachen.de) and creates current months' prayer times in a specific Google Calendar using Google's Service Account crendentials.
+A script that fetches the Islamic prayer times from [prayer-times-api.izaachen.de](https://prayer-times-api.izaachen.de) (for Germany) and [api.aladhan.com](https://aladhan.com/) (for Morocco) and creates current months' prayer times in a specific Google Calendar using Google's Service Account crendentials (for each country).
 
 > **Note:** This script was tested and used with Python 3.12
 
