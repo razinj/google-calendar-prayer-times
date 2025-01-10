@@ -34,7 +34,7 @@ poetry install
 Run the script:
 
 ```shell
-python src/script.py
+make run
 ```
 
 ## Development
