@@ -25,4 +25,4 @@ jobs:
           set -e
           echo "$ENV_FILE_CONTENT" > .env
           echo "$SERVICE_ACCOUNT_FILE_CONTENT" > service-account.json
-          poetry run python src/script.py
+          make run

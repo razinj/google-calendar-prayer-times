@@ -1,3 +1,6 @@
+run:
+	poetry run python src/script.py
+
 format:
 	poetry run black .
 	poetry run isort .
