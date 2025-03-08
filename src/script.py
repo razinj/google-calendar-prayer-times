@@ -24,6 +24,23 @@ TIMEZONE_MOROCCO = os.getenv("TIMEZONE_MOROCCO")
 DATE_TIME_FORMATTING = "%Y-%m-%dT%H:%M:%S"
 
 
+def get_english_name_for_prayer(german_prayer_name: str) -> str:
+    different_prayer_names_map = {"zuhr": "dhuhr", "assr": "asr", "ishaa": "isha"}
+
+    name = different_prayer_names_map.get(german_prayer_name, None)
+
+    return name or german_prayer_name
+
+
+def round_up_to_next_minute(dt: datetime.datetime) -> datetime.datetime:
+    if dt.second == 0 and dt.microsecond == 0:
+        # Already on the minute boundary
+        return dt
+
+    # Move to the next minute, then strip out seconds & microseconds
+    return (dt + datetime.timedelta(minutes=1)).replace(second=0, microsecond=0)
+
+
 def fetch_prayer_times() -> t.Dict[str, t.Any]:
     if not LATITUDE or not LONGITUDE:
         raise ValueError("LATITUDE and LONGITUDE are required")
@@ -55,7 +72,7 @@ def fetch_prayer_times_morocco() -> t.Dict[str, t.Any]:
     year = str(datetime.date.today().year)
     month = str(datetime.date.today().month)
 
-    # See: see: https://aladhan.com/prayer-times-api#tag/Monthly-Annual-Prayer-Times-Calendar/paths/~1v1~1calendar~1%7Byear%7D~1%7Bmonth%7D/get  # noqa: E501
+    # See: https://aladhan.com/prayer-times-api#tag/Monthly-Annual-Prayer-Times-Calendar/paths/~1v1~1calendar~1%7Byear%7D~1%7Bmonth%7D/get  # noqa: E501
 
     initial_api_url = f"https://api.aladhan.com/v1/calendar/{year}/{month}"
     query_params = {
@@ -78,7 +95,7 @@ def get_current_month_prayer_times(
     prayer_times_calendar: t.List[t.Any],
 ) -> t.List[t.Dict[str, str]]:
     if not prayer_times_calendar:
-        raise ValueError("No prayer times supplied.")
+        raise ValueError("No prayer times supplied")
 
     result: t.List[t.Dict[str, str]] = []
     current_month = datetime.date.today().month
@@ -104,7 +121,7 @@ def create_calendar_events(
     credentials: t.Any, prayer_times_days: t.List[t.Dict[str, str]]
 ):
     if not CALENDAR_ID or not TIMEZONE:
-        raise ValueError("CALENDAR_ID and TIMEZONE are required.")
+        raise ValueError("CALENDAR_ID and TIMEZONE are required")
 
     service = build("calendar", "v3", credentials=credentials)
 
@@ -112,13 +129,17 @@ def create_calendar_events(
         summary: str, start_date: datetime.datetime, end_date: datetime.datetime
     ):
         event = {
-            "summary": f"DE - {summary}",
+            "summary": summary,
             "start": {
-                "dateTime": start_date.strftime(DATE_TIME_FORMATTING),
+                "dateTime": round_up_to_next_minute(start_date).strftime(
+                    DATE_TIME_FORMATTING
+                ),
                 "timeZone": TIMEZONE,
             },
             "end": {
-                "dateTime": end_date.strftime(DATE_TIME_FORMATTING),
+                "dateTime": round_up_to_next_minute(end_date).strftime(
+                    DATE_TIME_FORMATTING
+                ),
                 "timeZone": TIMEZONE,
             },
         }
@@ -126,13 +147,13 @@ def create_calendar_events(
         # See: https://developers.google.com/resources/api-libraries/documentation/calendar/v3/python/latest/calendar_v3.events.html#insert # noqa: E501
         service.events().insert(calendarId=CALENDAR_ID, body=event).execute()
 
-    for day in prayer_times_days:
+    for prayer_times_day in prayer_times_days:
         for prayer_name in ["fajr", "zuhr", "assr", "maghrib", "ishaa"]:
-            prayer_datetime = parse(day[prayer_name])
+            prayer_datetime = parse(prayer_times_day[prayer_name])
             create_single_calendar_event(
-                summary=prayer_name.capitalize(),
+                summary=get_english_name_for_prayer(prayer_name).capitalize(),
                 start_date=prayer_datetime,
-                end_date=prayer_datetime + datetime.timedelta(minutes=10),
+                end_date=prayer_datetime + datetime.timedelta(minutes=15),
             )
 
     print("[DE] Events created!")
@@ -152,11 +173,15 @@ def create_calendar_events_morocco(
         event = {
             "summary": f"MA - {summary}",
             "start": {
-                "dateTime": start_date.strftime(DATE_TIME_FORMATTING),
+                "dateTime": round_up_to_next_minute(start_date).strftime(
+                    DATE_TIME_FORMATTING
+                ),
                 "timeZone": TIMEZONE_MOROCCO,
             },
             "end": {
-                "dateTime": end_date.strftime(DATE_TIME_FORMATTING),
+                "dateTime": round_up_to_next_minute(end_date).strftime(
+                    DATE_TIME_FORMATTING
+                ),
                 "timeZone": TIMEZONE_MOROCCO,
             },
         }
@@ -171,15 +196,15 @@ def create_calendar_events_morocco(
             continue
 
         for prayer_name, prayer_datetime_raw in timings.items():
-            if prayer_name not in ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"]:
+            if prayer_name.lower() not in ["fajr", "dhuhr", "asr", "maghrib", "isha"]:
                 continue
 
             prayer_datetime = parse(prayer_datetime_raw)
 
             create_single_calendar_event(
-                summary=prayer_name,
+                summary=prayer_name.capitalize(),
                 start_date=prayer_datetime,
-                end_date=prayer_datetime + datetime.timedelta(minutes=10),
+                end_date=prayer_datetime + datetime.timedelta(minutes=15),
             )
 
     print("[MA] Events created!")
