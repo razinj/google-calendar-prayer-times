@@ -11,15 +11,15 @@ from googleapiclient.discovery import build  # type: ignore
 
 load_dotenv()
 
-LATITUDE = os.getenv("LATITUDE")
-LONGITUDE = os.getenv("LONGITUDE")
-CALENDAR_ID = os.getenv("CALENDAR_ID")
-TIMEZONE = os.getenv("TIMEZONE")
+LATITUDE = os.environ["LATITUDE"]
+LONGITUDE = os.environ["LONGITUDE"]
+CALENDAR_ID = os.environ["CALENDAR_ID"]
+TIMEZONE = os.environ["TIMEZONE"]
 
-LATITUDE_MOROCCO = os.getenv("LATITUDE_MOROCCO")
-LONGITUDE_MOROCCO = os.getenv("LONGITUDE_MOROCCO")
-CALENDAR_ID_MOROCCO = os.getenv("CALENDAR_ID_MOROCCO")
-TIMEZONE_MOROCCO = os.getenv("TIMEZONE_MOROCCO")
+LATITUDE_MOROCCO = os.environ["LATITUDE_MOROCCO"]
+LONGITUDE_MOROCCO = os.environ["LONGITUDE_MOROCCO"]
+CALENDAR_ID_MOROCCO = os.environ["CALENDAR_ID_MOROCCO"]
+TIMEZONE_MOROCCO = os.environ["TIMEZONE_MOROCCO"]
 
 DATE_TIME_FORMATTING = "%Y-%m-%dT%H:%M:%S"
 
@@ -42,9 +42,6 @@ def round_up_to_next_minute(dt: datetime.datetime) -> datetime.datetime:
 
 
 def fetch_prayer_times() -> t.Dict[str, t.Any]:
-    if not LATITUDE or not LONGITUDE:
-        raise ValueError("LATITUDE and LONGITUDE are required")
-
     api_url = "https://prayer-times-api.izaachen.de"
     body = {
         "taqdir_method": "new_method",
@@ -66,9 +63,6 @@ def fetch_prayer_times() -> t.Dict[str, t.Any]:
 
 
 def fetch_prayer_times_morocco() -> t.Dict[str, t.Any]:
-    if not LATITUDE_MOROCCO or not LONGITUDE_MOROCCO:
-        raise ValueError("LATITUDE_MOROCCO and LONGITUDE_MOROCCO are required")
-
     year = str(datetime.date.today().year)
     month = str(datetime.date.today().month)
 
@@ -94,9 +88,6 @@ def fetch_prayer_times_morocco() -> t.Dict[str, t.Any]:
 def get_current_month_prayer_times(
     prayer_times_calendar: t.List[t.Any],
 ) -> t.List[t.Dict[str, str]]:
-    if not prayer_times_calendar:
-        raise ValueError("No prayer times supplied")
-
     result: t.List[t.Dict[str, str]] = []
     current_month = datetime.date.today().month
 
@@ -119,9 +110,9 @@ def get_credentials() -> t.Any:
 
 def create_calendar_events(
     credentials: t.Any, prayer_times_days: t.List[t.Dict[str, str]]
-):
-    if not CALENDAR_ID or not TIMEZONE:
-        raise ValueError("CALENDAR_ID and TIMEZONE are required")
+) -> None:
+    if not prayer_times_days:
+        raise ValueError("No prayer times supplied")
 
     service = build("calendar", "v3", credentials=credentials)
 
@@ -161,9 +152,9 @@ def create_calendar_events(
 
 def create_calendar_events_morocco(
     credentials: t.Any, prayer_times_days: t.List[t.Dict[str, str]]
-):
-    if not CALENDAR_ID_MOROCCO or not TIMEZONE_MOROCCO:
-        raise ValueError("CALENDAR_ID_MOROCCO and TIMEZONE_MOROCCO are required.")
+) -> None:
+    if not prayer_times_days:
+        raise ValueError("No prayer times supplied")
 
     service = build("calendar", "v3", credentials=credentials)
 
