@@ -4,6 +4,8 @@ A script that fetches the Islamic prayer times from [prayer-times-api.izaachen.d
 
 > **Note:** This script was tested and used with Python 3.12
 
+> **Note:** times are rounded up to nearest minute
+
 Preview:
 
 ![Calendar Screenshot](./docs/calendar-screenshot.png)
