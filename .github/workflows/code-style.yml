@@ -19,4 +19,4 @@ jobs:
       - run: poetry install
 
       - name: Perform Checks
-        run: make format-ci && make lint-ci
+        run: make format-ci && make lint-ci && make test

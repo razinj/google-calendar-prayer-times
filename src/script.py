@@ -49,7 +49,7 @@ PRAYER_NAMES_MAP = {"zuhr": "dhuhr", "assr": "asr", "ishaa": "isha"}
 
 
 def get_prayer_canonical_name(name: str) -> str:
-    return PRAYER_NAMES_MAP.get(name, name)
+    return PRAYER_NAMES_MAP.get(name.lower(), name.lower())
 
 
 def round_up_to_next_minute(dt_: dt.datetime) -> dt.datetime:

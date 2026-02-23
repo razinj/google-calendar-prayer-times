@@ -16,3 +16,6 @@ format-ci:
 lint-ci:
 	poetry run mypy .
 	poetry run flake8 .
+
+test:
+	PYTHONPATH=. poetry run pytest -v
