@@ -24,6 +24,7 @@ Preview:
 2. Create a GitHub Actions repository secret named `SERVICE_ACCOUNT_FILE_CONTENT` and paste the JSON credentials content into it.
 3. Create a GitHub Actions repository secret named `ENV_FILE_CONTENT` and populate it with the same content as in the sample file (`.env.sample`).
 4. Either run manually or wait until scheduled time.
+5. For manual runs, you can choose `country` (`all`, `de`, `ma`) and enable `dry_run` from the GitHub Actions UI.
 
 ## Run
 
@@ -37,6 +38,24 @@ Run the script:
 
 ```shell
 make run
+```
+
+Dry run (real reads, no calendar writes):
+
+```shell
+poetry run python src/script.py --dry-run
+```
+
+Dry run for Germany only:
+
+```shell
+poetry run python src/script.py --country de --dry-run
+```
+
+Run for Morocco only:
+
+```shell
+poetry run python src/script.py --country ma
 ```
 
 ## Development
