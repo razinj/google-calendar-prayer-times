@@ -5,7 +5,7 @@ package-mode = false
 [tool.poetry.dependencies]
 python = "^3.12"
 httpx = "0.28.1"
-python-dotenv = "1.0"
+python-dotenv = "1.2.2"
 google-api-python-client = "2.153.0"
 google-auth-httplib2 = "0.2.0"
 python-dateutil = "2.9.0.post0"
