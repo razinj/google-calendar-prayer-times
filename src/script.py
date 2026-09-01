@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import datetime as dt
 import logging
 import os
@@ -152,8 +153,20 @@ def fetch_prayer_times_ma() -> list[dict]:
 def delete_current_month_events(
     calendar_id: str, timezone: str, service: t.Any
 ) -> None:
+    event_ids = list_current_month_event_ids(calendar_id, timezone, service)
+    requests = [
+        service.events().delete(calendarId=calendar_id, eventId=event_id)
+        for event_id in event_ids
+    ]
+
+    run_in_batches(service, requests, f"delete-{calendar_id[:10]}-events")
+
+
+def list_current_month_event_ids(
+    calendar_id: str, timezone: str, service: t.Any
+) -> list[str]:
     start, end = get_current_month_bounds(timezone)
-    requests = []
+    event_ids: list[str] = []
     page_token = None
 
     while True:
@@ -171,15 +184,13 @@ def delete_current_month_events(
         )
 
         for item in page.get("items", []):
-            requests.append(
-                service.events().delete(calendarId=calendar_id, eventId=item["id"])
-            )
+            event_ids.append(item["id"])
 
         page_token = page.get("nextPageToken")
         if not page_token:
             break
 
-    run_in_batches(service, requests, f"delete-{calendar_id[:10]}-events")
+    return event_ids
 
 
 def build_prayer_event(
@@ -203,9 +214,16 @@ def build_prayer_event(
 
 
 def create_events_de(service: t.Any) -> None:
+    creation_requests = build_creation_requests_de(service, fetch_prayer_times_de())
+    run_in_batches(service, creation_requests, "create-events-de")
+
+
+def build_creation_requests_de(
+    service: t.Any, prayer_days: list[dict[str, str]]
+) -> list[t.Any]:
     creation_requests = []
 
-    for day in fetch_prayer_times_de():
+    for day in prayer_days:
         for prayer in PRAYERS_DE:
             prayer_datetime = parse(day[prayer])
             event_summary = get_prayer_canonical_name(prayer).capitalize()
@@ -217,13 +235,29 @@ def create_events_de(service: t.Any) -> None:
                 )
             )
 
-    run_in_batches(service, creation_requests, "create-events-de")
+    return creation_requests
+
+
+def count_creatable_events_de(prayer_days: list[dict[str, str]]) -> int:
+    count = 0
+
+    for day in prayer_days:
+        for prayer in PRAYERS_DE:
+            parse(day[prayer])
+            count += 1
+
+    return count
 
 
 def create_events_ma(service):
+    creation_requests = build_creation_requests_ma(service, fetch_prayer_times_ma())
+    run_in_batches(service, creation_requests, "create-events-ma")
+
+
+def build_creation_requests_ma(service: t.Any, prayer_days: list[dict]) -> list[t.Any]:
     creation_requests = []
 
-    for day in fetch_prayer_times_ma():
+    for day in prayer_days:
         timings = t.cast(dict[str, str], day.get("timings", {}))
 
         for prayer_name, prayer_datetime_raw in timings.items():
@@ -243,16 +277,114 @@ def create_events_ma(service):
                 )
             )
 
-    run_in_batches(service, creation_requests, "create-events-ma")
+    return creation_requests
 
 
-def main():
-    service = get_calendar_service()
+def count_creatable_events_ma(prayer_days: list[dict]) -> int:
+    count = 0
+
+    for day in prayer_days:
+        timings = t.cast(dict[str, str], day.get("timings", {}))
+
+        for prayer_name, prayer_datetime_raw in timings.items():
+            prayer_name_normalized = prayer_name.lower()
+            if prayer_name_normalized not in PRAYERS_MA:
+                continue
+
+            parse(prayer_datetime_raw)
+            count += 1
+
+    return count
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Sync current-month prayer times into Google Calendar"
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Fetch and read calendar data only; do not write any changes",
+    )
+    parser.add_argument(
+        "--country",
+        choices=["de", "ma", "all"],
+        default="all",
+        help="Country scope to process (default: all)",
+    )
+
+    return parser.parse_args(argv)
+
+
+def sync_de(service: t.Any, dry_run: bool) -> None:
+    prayer_days = fetch_prayer_times_de()
+    event_ids = list_current_month_event_ids(CALENDAR_ID, TIMEZONE, service)
+    creatable_events = count_creatable_events_de(prayer_days)
+
+    logger.info(
+        "[DE] fetched_days=%s found_events=%s creatable_events=%s",
+        len(prayer_days),
+        len(event_ids),
+        creatable_events,
+    )
+
+    if dry_run:
+        logger.info("[DE] dry-run active: skipping deletes and creates")
+        return
 
     delete_current_month_events(CALENDAR_ID, TIMEZONE, service)
-    create_events_de(service)
+    creation_requests = build_creation_requests_de(service, prayer_days)
+    run_in_batches(
+        service,
+        creation_requests,
+        "create-events-de",
+    )
+
+
+def sync_ma(service: t.Any, dry_run: bool) -> None:
+    prayer_days = fetch_prayer_times_ma()
+    event_ids = list_current_month_event_ids(CALENDAR_ID_MA, TIMEZONE_MA, service)
+    creatable_events = count_creatable_events_ma(prayer_days)
+
+    logger.info(
+        "[MA] fetched_days=%s found_events=%s creatable_events=%s",
+        len(prayer_days),
+        len(event_ids),
+        creatable_events,
+    )
+
+    if dry_run:
+        logger.info("[MA] dry-run active: skipping deletes and creates")
+        return
+
     delete_current_month_events(CALENDAR_ID_MA, TIMEZONE_MA, service)
-    create_events_ma(service)
+    creation_requests = build_creation_requests_ma(service, prayer_days)
+    run_in_batches(
+        service,
+        creation_requests,
+        "create-events-ma",
+    )
+
+
+def main(argv: list[str] | None = None):
+    args = parse_args(argv)
+
+    if args.dry_run and logger.getEffectiveLevel() > logging.INFO:
+        logger.setLevel(logging.INFO)
+
+    if args.dry_run:
+        logger.info(
+            "Dry-run mode enabled for country=%s (reads only, no calendar writes)",
+            args.country,
+        )
+
+    service = get_calendar_service()
+
+    if args.country in ("de", "all"):
+        sync_de(service, args.dry_run)
+
+    if args.country in ("ma", "all"):
+        sync_ma(service, args.dry_run)
 
 
 if __name__ == "__main__":
